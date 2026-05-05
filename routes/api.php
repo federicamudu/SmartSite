@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DocumentRevisionController;
+use App\Http\Controllers\Api\DocumentDownloadController;
 
 // ROTTA PUBBLICA (Chiunque può provare a fare login)
 Route::post('/login', [AuthController::class, 'login']);
@@ -14,5 +15,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/documents', [DocumentController::class, 'index']);
     Route::post('/documents', [DocumentController::class, 'store']);
     Route::post('/documents/{document}/revisions', [DocumentRevisionController::class, 'store']);
-    
+    Route::get('/revisions/{revision}/download', [DocumentDownloadController::class, 'download']);
 });
