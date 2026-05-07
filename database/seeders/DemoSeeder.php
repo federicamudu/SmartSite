@@ -30,18 +30,29 @@ class DemoSeeder extends Seeder
             'role' => 'owner'
         ]);
 
+        User::create([
+            'name' => 'Luigi Verdi',
+            'email' => 'luigi@acme.com',
+            'password' => bcrypt('password123'),
+            'tenant_id' => $demoCompany->id,
+            'role' => 'user'
+        ]);
+
         // 3. Creiamo un documento "Finto" per testare
         // (Nota: non metto il tenant_id qui, vedo se il Trait funziona!)
         
         // Logghiamo fittiziamente l'utente per far scattare la magia del Trait
         Auth::login($admin);
 
-        $document = Document::create([
+        $document = new Document([
             'code' => 'PID-2024-001',
             'title' => 'Schema P&ID Reattore Principale',
             'description' => 'Schema tubazioni e strumentazione per il progetto Alpha.',
             'created_by' => $admin->id
         ]);
+
+        $document->tenant_id = $demoCompany->id; 
+        $document->save();
 
         // 4. Creiamo la prima revisione del documento
         DocumentRevision::create([

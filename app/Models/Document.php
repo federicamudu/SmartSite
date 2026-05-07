@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use App\Traits\BelongsToTenant; // Il nostro Trait!
+use App\Traits\BelongsToTenant; 
 
 class Document extends Model
 {
-    use HasUuids, BelongsToTenant; // Magia attivata.
+    use HasUuids, BelongsToTenant; 
 
     protected $fillable = ['code', 'title', 'description', 'created_by'];
 

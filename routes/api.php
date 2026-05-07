@@ -13,7 +13,7 @@ Route::post('/login', [AuthController::class, 'login']);
 // ROTTE PROTETTE (Serve il Token Sanctum!)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/documents', [DocumentController::class, 'index']);
-    Route::post('/documents', [DocumentController::class, 'store']);
+    Route::post('/documents', [DocumentController::class, 'store'])->middleware('role:owner');
     Route::post('/documents/{document}/revisions', [DocumentRevisionController::class, 'store']);
     Route::get('/revisions/{revision}/download', [DocumentDownloadController::class, 'download']);
 });
