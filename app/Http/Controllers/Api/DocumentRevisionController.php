@@ -23,31 +23,39 @@ class DocumentRevisionController extends Controller
      */
     public function store(Request $request, string $documentId)
     {
-        // 1. La "Dogana" per i file (Solo PDF, max 10MB)
+        // 1. Validazione (tolgo version_number perché lo calcolo in automatico)
         $request->validate([
-            'file' => 'required|file|mimes:pdf|max:10240', 
-            'version_number' => 'required|string',
-            'comment' => 'nullable|string',
+            'file' => 'required|file|mimes:pdf|max:10240', // Max 10MB
+            'comment' => 'nullable|string'
         ]);
 
-        // 2. Trovo il documento padre
+        // 2. Trovo il documento
         $document = Document::findOrFail($documentId);
 
-        // 3. Salvo fisicamente il file nel filesystem (storage/app/public/documents)
-        $path = $request->file('file')->store('documents', 'public');
+        // Conto quante revisioni esistono già per questo documento
+        $count = $document->revisions()->count();
+        
+        // Genero la stringa: R00, R01, R02... 
+        // str_pad serve a mettere lo zero davanti se il numero è < 10
+        $nextVersion = 'R' . str_pad($count, 2, '0', STR_PAD_LEFT);
 
-        // 4. Scrivo nel database la traccia della nuova revisione
+        // 3. Gestione File
+        $file = $request->file('file');
+        $fileName = time() . '_' . $file->getClientOriginalName();
+        $path = $file->storeAs('documents', $fileName, 'local');
+
+        // 4. Salvataggio
         $revision = DocumentRevision::create([
             'document_id' => $document->id,
-            'version_number' => $request->version_number,
+            'version_number' => $nextVersion, // Usiamo la versione calcolata!
             'file_path' => $path,
-            'status' => 'pending', // Lo status iniziale è "pending" finché un admin non lo approva
+            'status' => 'pending',
             'comment' => $request->comment,
-            'uploaded_by' => Auth::id(),
+            'uploaded_by' => $request->user()->id,
         ]);
 
         return response()->json([
-            'message' => 'File caricato con successo!',
+            'message' => "Revisione {$nextVersion} caricata con successo!",
             'revision' => $revision
         ], 201);
     }
