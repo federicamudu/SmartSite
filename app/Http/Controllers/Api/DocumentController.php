@@ -48,7 +48,12 @@ class DocumentController extends Controller
      */
     public function show(string $id)
     {
-        //
+        // Cerco il documento e "tiro su" anche le sue revisioni
+        $document = Document::with('revisions')->findOrFail($id);
+
+        return response()->json([
+            'data' => $document
+        ]);
     }
 
     /**

@@ -52,6 +52,27 @@ class DocumentRevisionController extends Controller
         ], 201);
     }
 
+    public function updateStatus(Request $request, string $revisionId)
+    {
+        // 1. Validazione: accetto solo "approved" o "rejected"
+        $request->validate([
+            'status' => 'required|in:approved,rejected',
+        ]);
+
+        // 2. Trovo la revisione
+        $revision = DocumentRevision::findOrFail($revisionId);
+
+        // 3. Aggiorno lo stato
+        $revision->update([
+            'status' => $request->status
+        ]);
+
+        return response()->json([
+            'message' => 'Stato della revisione aggiornato con successo!',
+            'revision' => $revision
+        ]);
+    }
+
     /**
      * Display the specified resource.
      */
