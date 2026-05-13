@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\DocumentRevision;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
+use App\Models\ActionLog;
 
 class DocumentDownloadController extends Controller
 {
-    public function download(string $revisionId)
+    public function download(Request $request, string $revisionId)
     {
         // 1. Cerco la revisione nel database (Laravel filtrerà in automatico per azienda!)
         $revision = DocumentRevision::findOrFail($revisionId);
@@ -26,6 +28,12 @@ class DocumentDownloadController extends Controller
 
         // 4. Servo il file all'utente (forza il download nel browser)
         $fullPath = storage_path('app/public/' . $revision->file_path);
+
+        ActionLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'file_downloaded',
+            'description' => "{$request->user()->name} ha scaricato il file della revisione {$revision->version_number}."
+        ]);
 
         return response()->download($fullPath, $downloadName);
     }

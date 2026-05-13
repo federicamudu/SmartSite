@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Document;
 use App\Models\DocumentRevision;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Models\ActionLog;
 
 class DocumentRevisionController extends Controller
 {
@@ -54,6 +54,12 @@ class DocumentRevisionController extends Controller
             'uploaded_by' => $request->user()->id,
         ]);
 
+        ActionLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'revision_uploaded',
+            'description' => "{$request->user()->name} ha caricato la revisione {$nextVersion} per il documento con ID: {$document->id}."
+        ]);
+
         return response()->json([
             'message' => "Revisione {$nextVersion} caricata con successo!",
             'revision' => $revision
@@ -74,6 +80,16 @@ class DocumentRevisionController extends Controller
         $revision->update([
             'status' => $request->status
         ]);
+        // --- NUOVO: SALVO IL LOG ---
+        $azione = $request->status === 'approved' ? 'approvato' : 'rifiutato';
+        $userName = $request->user()->name; // Prende il nome di chi sta facendo l'azione
+
+        ActionLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'revision_status_changed',
+            'description' => "{$userName} ha {$azione} la revisione {$revision->version_number}."
+        ]);
+        // ------------------------------
 
         return response()->json([
             'message' => 'Stato della revisione aggiornato con successo!',

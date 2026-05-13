@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DocumentRevisionController;
 use App\Http\Controllers\Api\DocumentDownloadController;
+use App\Models\ActionLog;
 
 // ROTTA PUBBLICA (Chiunque può provare a fare login)
 Route::post('/login', [AuthController::class, 'login']);
@@ -18,4 +19,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/documents/{document}/revisions', [DocumentRevisionController::class, 'store']);
     Route::get('/revisions/{revision}/download', [DocumentDownloadController::class, 'download']);
     Route::patch('/revisions/{revision}/status', [DocumentRevisionController::class, 'updateStatus'])->middleware('role:owner');
+    Route::get('/logs', function (\Illuminate\Http\Request $request) {
+        $logs = ActionLog::with('user:id,name')
+                            ->latest()
+                            ->paginate(15);
+                         
+        return response()->json($logs);
+    })->middleware('role:owner');
 });

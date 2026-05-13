@@ -8,20 +8,36 @@ use App\Http\Resources\DocumentResource;
 use App\Http\Requests\StoreDocumentRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
+use App\Models\ActionLog;
 
 class DocumentController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Chiedo tutti i documenti... 
-        // ma il Trait dovrà filtrare automaticamente solo quelli della "Acme Engineering"!
-        $documents = Document::with('revisions')->get();
+        // 1. Inizio a preparare la query (il Trait aggiunge già il filtro tenant_id in automatico)
+        $query = Document::query();
 
-        return DocumentResource::collection($documents);
+        // 2. Se l'utente ha cercato una parola chiave...
+        if ($request->has('search')) {
+            $searchTerm = $request->search;
+            
+            // Cercho sia nel codice che nel titolo
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('code', 'like', '%' . $searchTerm . '%')
+                ->orWhere('title', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        // 3. Paginazione: invece di ->get() (che prende TUTTO), uso ->paginate()
+        // Aggiungo anche le revisioni e ordino dai più recenti
+        $documents = $query->with('revisions')
+                        ->latest()
+                        ->paginate(10); // 10 risultati per pagina
+
+        return response()->json($documents);
     }
 
     /**
@@ -36,6 +52,12 @@ class DocumentController extends Controller
             'title' => $request->title,
             'description' => $request->description,
             'created_by' => Auth::id(), // Registro chi ha creato l'anagrafica
+        ]);
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'document_created',
+            'description' => Auth::user()->name . " ha creato un nuovo documento: {$document->title} ({$document->code})."
         ]);
 
         // Restituisco il documento appena creato formattato bene!
