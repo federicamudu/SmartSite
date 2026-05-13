@@ -8,6 +8,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\UserController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -18,6 +19,31 @@ Route::get('/', function () {
     ]);
 });
 
+// -- ROTTE GESTIONE UTENTI --
+Route::get('/users', [UserController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('users.index');
+
+Route::get('/users/create', [UserController::class, 'create'])
+    ->middleware(['auth', 'verified'])
+    ->name('users.create');
+
+Route::post('/users', [UserController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('users.store');
+
+Route::get('/users/{user}/edit', [UserController::class, 'edit'])
+    ->middleware(['auth', 'verified'])
+    ->name('users.edit');
+
+Route::put('/users/{user}', [UserController::class, 'update'])
+    ->middleware(['auth', 'verified'])
+    ->name('users.update');
+
+Route::delete('/users/{user}', [UserController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])
+    ->name('users.destroy');
+    
 // -- ROTTE DOCUMENTI (Dashboard e Dettaglio) --
 Route::get('/dashboard', [DocumentController::class, 'index'])
     ->middleware(['auth', 'verified'])

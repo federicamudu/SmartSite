@@ -29,7 +29,7 @@ const showingNavigationDropdown = ref(false);
                                 </Link>
                             </div>
 
-                            <!-- Navigation Links -->
+                            <!-- Navigation Links (SOLO DASHBOARD QUI) -->
                             <div
                                 class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                             >
@@ -76,6 +76,21 @@ const showingNavigationDropdown = ref(false);
                                         >
                                             Profile
                                         </DropdownLink>
+                                        
+                                        <!-- TASTI OWNER -->
+                                        <DropdownLink
+                                            v-if="['owner'].includes($page.props.auth.user.role)"
+                                            :href="route('users.index')"
+                                        >
+                                            Gestione Utenti
+                                        </DropdownLink>
+                                        <DropdownLink 
+                                            v-if="['owner'].includes($page.props.auth.user.role)" 
+                                            :href="route('audit.index')" 
+                                        >
+                                            Audit Log
+                                        </DropdownLink>
+
                                         <DropdownLink
                                             :href="route('logout')"
                                             method="post"
@@ -167,6 +182,21 @@ const showingNavigationDropdown = ref(false);
                             <ResponsiveNavLink :href="route('profile.edit')">
                                 Profile
                             </ResponsiveNavLink>
+                            
+                            <!-- TASTI OWNER (MOBILE) -->
+                            <ResponsiveNavLink 
+                                v-if="['owner'].includes($page.props.auth.user.role)" 
+                                :href="route('users.index')"
+                            >
+                                Gestione Utenti
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink 
+                                v-if="['owner'].includes($page.props.auth.user.role)" 
+                                :href="route('audit.index')"
+                            >
+                                Audit Log
+                            </ResponsiveNavLink>
+
                             <ResponsiveNavLink
                                 :href="route('logout')"
                                 method="post"

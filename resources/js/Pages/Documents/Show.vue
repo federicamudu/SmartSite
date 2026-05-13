@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 
 const props = defineProps({
     document: Object,
@@ -20,6 +20,23 @@ const submitRevision = () => {
             alert('Nuova revisione caricata con successo!');
         },
     });
+};
+
+const rifiuta = (id) => {
+    // Usiamo un semplice prompt nativo del browser per fare in fretta e pulito
+    const reason = window.prompt("Inserisci il motivo del rifiuto. Questo campo è obbligatorio:");
+    
+    if (reason === null) {
+        return; // L'utente ha cliccato "Annulla"
+    }
+    
+    if (reason.trim() === '') {
+        alert("Devi inserire una motivazione per poter rifiutare il documento!");
+        return;
+    }
+
+    // Se ha scritto qualcosa, mandiamo al server!
+    router.patch(route('revisions.reject', id), { reason: reason });
 };
 
 // Funzione carina per colorare lo status
@@ -74,27 +91,26 @@ const getStatusColor = (status) => {
                                         {{ rev.version_number }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span v-if="rev.status === 'approved'" 
-                                            class="px-3 py-1 text-xs font-bold uppercase rounded-full bg-green-500 text-white shadow-sm">
-                                            Approvato
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                            :class="{
+                                                'bg-yellow-100 text-yellow-800': rev.status === 'pending',
+                                                'bg-green-100 text-green-800': rev.status === 'approved',
+                                                'bg-red-100 text-red-800': rev.status === 'rejected'
+                                            }">
+                                            {{ rev.status.toUpperCase() }}
                                         </span>
-
-                                        <span v-else-if="rev.status === 'rejected'" 
-                                            class="px-3 py-1 text-xs font-bold uppercase rounded-full bg-red-500 text-white shadow-sm">
-                                            Rifiutato
-                                        </span>
-
-                                        <span v-else 
-                                            class="px-3 py-1 text-xs font-bold uppercase rounded-full bg-yellow-400 text-black shadow-sm">
-                                            In Attesa
-                                        </span>
+                                        
+                                        <!-- Mostriamo il motivo in rosso corsivo sotto la pillola se è rifiutato! -->
+                                        <div v-if="rev.status === 'rejected' && rev.rejection_reason" class="text-xs text-red-600 mt-2 font-medium italic whitespace-normal w-48">
+                                            Motivo: {{ rev.rejection_reason }}
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-500">
                                         {{ rev.comment || '-' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                                         <!-- Bottoni visibili SOLO se lo status è pending -->
-                                        <template v-if="rev.status === 'pending'">
+                                        <template v-if="rev.status === 'pending' && ($page.props.auth.user.role === 'doc_controller' || $page.props.auth.user.role === 'focal_point')">
                                             <Link :href="route('revisions.approve', rev.id)" 
                                                 method="patch" 
                                                 as="button"
@@ -103,13 +119,10 @@ const getStatusColor = (status) => {
                                                 APPROVA
                                             </Link>
 
-                                            <Link :href="route('revisions.reject', rev.id)" 
-                                                method="patch" 
-                                                as="button"
-                                                preserve-scroll
+                                            <button @click="rifiuta(rev.id)" 
                                                 class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-3 rounded shadow-md transition ml-2">
                                                 RIFIUTA
-                                            </Link>
+                                            </button>
                                         </template>
 
                                         <a :href="route('revisions.preview', rev.id)" 

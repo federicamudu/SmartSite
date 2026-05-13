@@ -11,7 +11,7 @@ class DocumentRevision extends Model
 
     protected $fillable = [
         'document_id', 'version_number', 'file_path', 
-        'status', 'comment', 'uploaded_by', 'approved_at'
+        'status', 'comment', 'uploaded_by', 'approved_at', 'rejection_reason'
     ];
 
     protected $casts = [

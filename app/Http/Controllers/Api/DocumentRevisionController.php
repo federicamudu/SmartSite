@@ -106,32 +106,56 @@ class DocumentRevisionController extends Controller
 
     public function approve(Request $request, string $id)
     {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        if (!in_array($user->role, ['owner','doc_controller', 'focal_point'])) {
+            abort(403, 'Azione non autorizzata. Non hai i permessi per approvare i documenti.');
+        }
+
         $revision = DocumentRevision::findOrFail($id);
         
-        $revision->update(['status' => 'approved']);
-
-        ActionLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'revision_approved',
-            'description' => "{$request->user()->name} ha approvato la revisione {$revision->version_number}."
+        $revision->update([
+            'status' => 'approved',
+            'rejection_reason' => null, 
         ]);
 
-        return redirect()->back();
+        ActionLog::create([
+            'user_id' => $user->id,
+            'action' => 'revision_approved',
+            'description' => "{$user->name} ha approvato la revisione {$revision->version_number} del documento {$revision->document->code}."
+        ]);
+
+        return redirect()->back()->with('success', 'Revisione approvata con successo!');
     }
 
     public function reject(Request $request, string $id)
     {
-        $revision = DocumentRevision::findOrFail($id);
-        
-        $revision->update(['status' => 'rejected']);
+        /** @var \App\Models\User $user */
+        $user = $request->user();
 
-        ActionLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'revision_rejected',
-            'description' => "{$request->user()->name} ha rifiutato la revisione {$revision->version_number}."
+        if (!in_array($user->role, ['owner','doc_controller', 'focal_point'])) {
+            abort(403, 'Azione non autorizzata. Non hai i permessi per rifiutare i documenti.');
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:1000',
         ]);
 
-        return redirect()->back(); // Ricarica la pagina in automatico!
+        $revision = DocumentRevision::findOrFail($id);
+        
+        $revision->update([
+            'status' => 'rejected',
+            'rejection_reason' => $request->reason, 
+        ]);
+
+        ActionLog::create([
+            'user_id' => $user->id,
+            'action' => 'revision_rejected',
+            'description' => "{$user->name} ha rifiutato la revisione {$revision->version_number} del documento {$revision->document->code}. Motivo: {$request->reason}"
+        ]);
+
+        return redirect()->back()->with('success', 'Revisione rifiutata con motivazione.');
     }
 
     /**

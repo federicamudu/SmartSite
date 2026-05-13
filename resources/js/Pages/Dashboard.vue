@@ -27,11 +27,6 @@ watch(search, (value) => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dashboard Documenti</h2>
-                
-                <!-- Nuovo bottone per l'Audit Log -->
-                <Link :href="route('audit.index')" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded text-sm shadow">
-                    Audit Log
-                </Link>
             </div>
         </template>
 
