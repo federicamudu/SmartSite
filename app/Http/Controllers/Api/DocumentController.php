@@ -45,18 +45,21 @@ class DocumentController extends Controller
         return response()->json($documents);
     }
 
+    public function create(Request $request)
+    {
+        return Inertia::render('Documents/Create');
+    }
+
     /**
      * Store a newly created resource in storage.
      */
     public function store(StoreDocumentRequest $request)
     {
-        // Se il codice arriva qui, significa che i dati hanno superato la validazione!
-        // E grazie al Trait, non devo specificare il tenant_id.
         $document = Document::create([
             'code' => $request->code,
             'title' => $request->title,
             'description' => $request->description,
-            'created_by' => Auth::id(), // Registro chi ha creato l'anagrafica
+            'created_by' => Auth::id(),
         ]);
 
         ActionLog::create([
@@ -65,8 +68,13 @@ class DocumentController extends Controller
             'description' => Auth::user()->name . " ha creato un nuovo documento: {$document->title} ({$document->code})."
         ]);
 
-        // Restituisco il documento appena creato formattato bene!
-        // Uso "new" invece di "collection" perché sto restituendo UN SOLO documento.
+        // Se la richiesta NON arriva da Postman (quindi arriva dal browser/Inertia)
+        if (!$request->wantsJson()) {
+            // Rimbalziamo l'utente direttamente sulla pagina del nuovo documento appena creato!
+            return redirect()->route('documents.show', $document->id);
+        }
+
+        // Se chiama Postman
         return new DocumentResource($document);
     }
 

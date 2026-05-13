@@ -37,11 +37,17 @@ watch(search, (value) => {
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="mb-4">
+                <!-- Barra di ricerca e Bottone Nuovo -->
+                <div class="mb-4 flex justify-between items-center">
                     <input v-model="search" 
-                           type="text" 
-                           placeholder="Cerca per codice o titolo..." 
-                           class="w-full md:w-1/3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                        type="text" 
+                        placeholder="Cerca per codice o titolo..." 
+                        class="w-full md:w-1/3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                        
+                    <Link :href="route('documents.create')" 
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded shadow">
+                        + Nuovo Documento
+                    </Link>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     

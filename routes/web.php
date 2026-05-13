@@ -23,6 +23,16 @@ Route::get('/dashboard', [DocumentController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+
+Route::get('/documents/create', [DocumentController::class, 'create'])
+    ->middleware(['auth', 'verified'])
+    ->name('documents.create');
+
+
+Route::post('/documents', [DocumentController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('documents.store');
+
 Route::get('/documents/{document}', [DocumentController::class, 'show'])
     ->middleware(['auth', 'verified'])
     ->name('documents.show');
