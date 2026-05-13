@@ -1,13 +1,29 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 
-defineProps({
+const props = defineProps({
     logs: {
         type: Array,
         default: () => [],
     },
+    filters: Object, 
 });
+
+// Variabili per i calendari
+const startDate = ref(props.filters?.start_date || '');
+const endDate = ref(props.filters?.end_date || '');
+
+// Filtra automaticamente quando cambi una data
+const filterLogs = () => {
+    router.get(route('audit.index'), { 
+        start_date: startDate.value, 
+        end_date: endDate.value 
+    }, { preserveState: true, replace: true });
+};
+
+watch([startDate, endDate], filterLogs);
 
 // Funzione per rendere la data leggibile
 const formattaData = (data) => {
@@ -34,7 +50,28 @@ const formattaData = (data) => {
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    
+                    <div class="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-center gap-4">
+                            <div>
+                                <label class="block text-xs text-gray-500 uppercase font-bold mb-1">Da data</label>
+                                <input type="date" v-model="startDate" class="rounded border-gray-300 shadow-sm text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 uppercase font-bold mb-1">A data</label>
+                                <input type="date" v-model="endDate" class="rounded border-gray-300 shadow-sm text-sm">
+                            </div>
+                            <button @click="startDate = ''; endDate = ''" class="mt-5 text-sm text-gray-500 hover:text-gray-800 underline">
+                                Resetta
+                            </button>
+                        </div>
+
+                        <!-- Il Bottone d'Esportazione Magico (passa le date all'URL!) -->
+                        <a :href="`/audit/export-pdf?start_date=${startDate}&end_date=${endDate}`" 
+                        target="_blank"
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow inline-flex items-center gap-2">
+                            📄 Esporta in PDF
+                        </a>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">

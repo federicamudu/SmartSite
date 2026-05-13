@@ -1,13 +1,22 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 
-// Qui dichiaro che ci aspettiamo di ricevere una variabile 'documents' dal Backend!
-defineProps({
-    documents: {
-        type: Array,
-        default: () => [],
-    },
+const props = defineProps({
+    documents: Object, 
+    filters: Object,
+});
+
+// Variabile collegata alla barra di ricerca
+const search = ref(props.filters?.search || '');
+
+// Appena l'utente scrive, facciamo la chiamata
+watch(search, (value) => {
+    router.get(route('dashboard'), { search: value }, {
+        preserveState: true,
+        replace: true
+    });
 });
 </script>
 
@@ -28,6 +37,12 @@ defineProps({
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="mb-4">
+                    <input v-model="search" 
+                           type="text" 
+                           placeholder="Cerca per codice o titolo..." 
+                           class="w-full md:w-1/3 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     
                     <h3 class="text-lg font-bold mb-4">I tuoi Documenti Aziendali</h3>
@@ -46,9 +61,9 @@ defineProps({
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <!-- Se ci sono documenti, facciamo un ciclo (v-for) -->
-                                <tr v-for="doc in documents" :key="doc.id">
+                                <tr v-for="doc in documents.data" :key="doc.id">
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <Link :href="route('documents.show', doc.id)" class="text-indigo-600 hover:text-indigo-900 font-bold">
+                                        <Link :href="route('documents.show', { document: doc.id })" class="text-indigo-600 hover:text-indigo-900 font-bold">
                                             Vedi Dettaglio &rarr;
                                         </Link>
                                     </td>
@@ -74,7 +89,22 @@ defineProps({
                             </tbody>
                         </table>
                     </div>
-
+                    <div class="p-4 flex justify-center" v-if="documents.links && documents.links.length > 3">
+                        <nav class="inline-flex rounded-md shadow-sm">
+                            <template v-for="link in documents.links" :key="link.label">
+                                <Link 
+                                    :href="link.url || '#'" 
+                                    v-html="link.label"
+                                    class="px-4 py-2 border text-sm font-medium"
+                                    :class="{
+                                        'bg-white text-gray-500 border-gray-300 hover:bg-gray-50': !link.active,
+                                        'bg-indigo-600 text-white border-indigo-600': link.active,
+                                        'opacity-50 cursor-not-allowed': !link.url
+                                    }"
+                                />
+                            </template>
+                        </nav>
+                    </div>
                 </div>
             </div>
         </div>

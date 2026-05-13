@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Document;
-use App\Http\Resources\DocumentResource;
 use App\Http\Requests\StoreDocumentRequest;
+use App\Http\Resources\DocumentResource;
+use App\Models\ActionLog;
+use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\ActionLog;
+use Inertia\Inertia;
 
 class DocumentController extends Controller
 {
@@ -17,26 +18,30 @@ class DocumentController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Inizio a preparare la query (il Trait aggiunge già il filtro tenant_id in automatico)
         $query = Document::query();
 
-        // 2. Se l'utente ha cercato una parola chiave...
-        if ($request->has('search')) {
+        if ($request->has('search') && $request->search != '') {
             $searchTerm = $request->search;
-            
-            // Cercho sia nel codice che nel titolo
             $query->where(function($q) use ($searchTerm) {
                 $q->where('code', 'like', '%' . $searchTerm . '%')
-                ->orWhere('title', 'like', '%' . $searchTerm . '%');
+                  ->orWhere('title', 'like', '%' . $searchTerm . '%');
             });
         }
 
-        // 3. Paginazione: invece di ->get() (che prende TUTTO), uso ->paginate()
-        // Aggiungo anche le revisioni e ordino dai più recenti
         $documents = $query->with('revisions')
                         ->latest()
-                        ->paginate(10); // 10 risultati per pagina
+                        ->paginate(10)
+                        ->withQueryString(); 
 
+        // Se chiama Vue/Browser
+        if (!$request->wantsJson()) {
+            return Inertia::render('Dashboard', [
+                'documents' => $documents,
+                'filters' => $request->only(['search'])
+            ]);
+        }
+
+        // Se chiama Postman
         return response()->json($documents);
     }
 
@@ -68,11 +73,21 @@ class DocumentController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id) 
     {
-        // Cerco il documento e "tiro su" anche le sue revisioni
-        $document = Document::with('revisions')->findOrFail($id);
+        // Tiro su il documento e le revisioni ordinate dalla più recente
+        $document = Document::with(['revisions' => function ($query) {
+            $query->latest();
+        }])->findOrFail($id);
 
+        // Se chiama Vue/Browser
+        if (!$request->wantsJson()) {
+            return Inertia::render('Documents/Show', [
+                'document' => $document
+            ]);
+        }
+
+        // Se chiama Postman
         return response()->json([
             'data' => $document
         ]);

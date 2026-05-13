@@ -1,14 +1,13 @@
 <?php
 
+use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentDownloadController;
 use App\Http\Controllers\Api\DocumentRevisionController;
+use App\Http\Controllers\AuditController;
 use App\Http\Controllers\ProfileController;
-use App\Models\ActionLog;
-use App\Models\Document;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -19,33 +18,16 @@ Route::get('/', function () {
     ]);
 });
 
-//Route::get('/dashboard', function () {
-//    return Inertia::render('Dashboard');
-//})->middleware(['auth', 'verified'])->name('dashboard');
+// -- ROTTE DOCUMENTI (Dashboard e Dettaglio) --
+Route::get('/dashboard', [DocumentController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
-Route::get('/dashboard', function () {
-    
-    // 1. Pesco i documenti e le loro revisioni dal Database
-    $documents = Document::with('revisions')->latest()->get();
+Route::get('/documents/{document}', [DocumentController::class, 'show'])
+    ->middleware(['auth', 'verified'])
+    ->name('documents.show');
 
-    // 2. Passo i documenti alla pagina Vue
-    return Inertia::render('Dashboard', [
-        'documents' => $documents
-    ]);
-    
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::get('/documents/{document}', function (Document $document) {
-    // Carico il documento con tutte le sue revisioni (ordinate dalla più recente)
-    $document->load(['revisions' => function ($query) {
-        $query->latest();
-    }]);
-
-    return Inertia::render('Documents/Show', [
-        'document' => $document
-    ]);
-})->middleware(['auth', 'verified'])->name('documents.show');
-
+// -- ROTTE REVISIONI E FILE --
 Route::post('/documents/{document}/revisions', [DocumentRevisionController::class, 'store'])
     ->middleware(['auth', 'verified'])
     ->name('revisions.store');
@@ -66,18 +48,20 @@ Route::patch('/revisions/{revision}/reject', [DocumentRevisionController::class,
     ->middleware(['auth', 'verified'])
     ->name('revisions.reject');
 
+// -- ROTTE AUDIT LOG --
+Route::get('/audit', [AuditController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('audit.index');
+
+Route::get('/audit/export-pdf', [AuditController::class, 'exportPdf'])
+    ->middleware(['auth', 'verified'])
+    ->name('audit.export');
+
+// -- ROTTE PROFILO UTENTE (Default Breeze) --
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
-
-Route::get('/audit', function () {
-    $logs = ActionLog::with('user')->latest()->get();
-
-    return Inertia::render('Audit/Index', [
-        'logs' => $logs
-    ]);
-})->middleware(['auth', 'verified'])->name('audit.index');
 
 require __DIR__.'/auth.php';
