@@ -60,8 +60,15 @@ class DocumentRevisionController extends Controller
             'description' => "{$request->user()->name} ha caricato la revisione {$nextVersion} per il documento con ID: {$document->id}."
         ]);
 
+        // SE LA CHIAMATA ARRIVA DAL SITO WEB (Inertia/Browser)
+        if (!$request->wantsJson()) {
+            // Dico al browser di ricaricare la pagina corrente
+            return redirect()->back(); 
+        }
+
+        // SE LA CHIAMATA ARRIVA DA POSTMAN (API pure)
         return response()->json([
-            'message' => "Revisione {$nextVersion} caricata con successo!",
+            'message' => "Revisione $nextVersion caricata con successo!",
             'revision' => $revision
         ], 201);
     }
@@ -95,6 +102,36 @@ class DocumentRevisionController extends Controller
             'message' => 'Stato della revisione aggiornato con successo!',
             'revision' => $revision
         ]);
+    }
+
+    public function approve(Request $request, string $id)
+    {
+        $revision = DocumentRevision::findOrFail($id);
+        
+        $revision->update(['status' => 'approved']);
+
+        ActionLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'revision_approved',
+            'description' => "{$request->user()->name} ha approvato la revisione {$revision->version_number}."
+        ]);
+
+        return redirect()->back();
+    }
+
+    public function reject(Request $request, string $id)
+    {
+        $revision = DocumentRevision::findOrFail($id);
+        
+        $revision->update(['status' => 'rejected']);
+
+        ActionLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'revision_rejected',
+            'description' => "{$request->user()->name} ha rifiutato la revisione {$revision->version_number}."
+        ]);
+
+        return redirect()->back(); // Ricarica la pagina in automatico!
     }
 
     /**
